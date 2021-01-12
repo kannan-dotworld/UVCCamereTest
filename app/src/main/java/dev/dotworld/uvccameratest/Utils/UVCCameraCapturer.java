@@ -38,13 +38,12 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
     private UVCCamera camera;
     private int preferredWidth;
     private int preferredHeight;
-     private final Surface surface;
+    private final Surface surface;
 
     private USBMonitor usbMonitor;
 
     private Surface previewSurface;
 
-    private DualFisheyeStitcher stitcher;
     private byte[] equiData = null;
 
     public UVCCameraCapturer(Surface surface) {
@@ -65,8 +64,6 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
         if (isInitialized()) {
             throw new IllegalStateException("Already initialized");
         }
-
-        this.stitcher = DualFisheyeStitcher.getInstance();
         this.frameObserver = frameObserver;
         this.applicationContext = applicationContext;
 
@@ -87,9 +84,6 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
         usbMonitor = new USBMonitor(this.applicationContext, this);
         usbMonitor.register();
         Log.d(TAG, "startCapture: "+usbMonitor.getDeviceList());
-        this.thread = new Thread(this);
-        this.thread.start();
-        this.frameObserver.onCapturerStarted(true);
     }
 
     public void stopCapture() throws InterruptedException {
@@ -103,10 +97,6 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
             usbMonitor.unregister();
             this.usbMonitor.destroy();
         }
-
-        isCameraRunning.getAndSet(false);
-        this.thread.wait();
-        this.frameObserver.onCapturerStopped();
     }
 
     public void changeCaptureFormat(int width, int height, int framerate) {
@@ -149,10 +139,6 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
         while (isCameraRunning.get()) {
             Log.d("UVCCameraCapturer", "captureFrame");
             try {
-                long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
-                stitcher.stitch(width, height, data, dst);
-//                this.frameObserver.onByteBufferFrameCaptured(
-//                        dst, width, height, 0, captureTimeNs);
                 this.frameObserver.onCapturerStarted(true); //me
                 this.thread.sleep(100);
 
@@ -187,7 +173,6 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
     public void onConnect(final UsbDevice device, final USBMonitor.UsbControlBlock ctrlBlock, final boolean createNew) {
         Log.v(TAG, "onConnect:");
         try {
-            releaseCamera();
             this.camera = new UVCCamera();
             this.camera.open(ctrlBlock);
 
@@ -230,12 +215,6 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
             final int[] textureHandle = new int[1];
             GLES20.glGenTextures(1, textureHandle, 0);
             final SurfaceTexture st = new SurfaceTexture(textureHandle[0], false);
-            //    final SurfaceTexture st = new SurfaceTexture(0, false);
-//            if (st != null) {
-//                previewSurface = new Surface(st);
-//                camera.setPreviewDisplay(previewSurface);
-//
-//            }
             camera.setPreviewDisplay(surface);
 
             this.camera.startPreview();
@@ -252,7 +231,6 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
     @Override
     public void onDisconnect(final UsbDevice device, final USBMonitor.UsbControlBlock ctrlBlock) {
         Log.v(TAG, "onDisconnect:");
-//        this.camera.close();
         releaseCamera();
         if (previewSurface != null) {
             previewSurface.release();
@@ -282,12 +260,7 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
         try {
             if (equiData == null)
                 equiData = new byte[(1280 * 720 * 3)/2];
-            stitcher.stitch(1280, 720, data, equiData);
-//            this.frameObserver.onByteBufferFrameCaptured(equiData, 1280, 720, 0, captureTimeNs);
         } catch (Exception e) {
-
-//            this.frameObserver.onByteBufferFrameCaptured(data, 1280, 720, 0, captureTimeNs);
-
         }
     }
 
