@@ -1,0 +1,3 @@
+include ':libusbcamera'
+include ':app'
+rootProject.name = "UvcCameraTest"
