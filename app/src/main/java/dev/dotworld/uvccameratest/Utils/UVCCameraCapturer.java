@@ -13,14 +13,11 @@ import com.serenegiant.usb.UVCCamera;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import tvi.webrtc.CapturerObserver;
 import tvi.webrtc.SurfaceTextureHelper;
 import tvi.webrtc.VideoCapturer;
-import com.serenegiant.usb.IFrameCallback;
 
 public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.OnDeviceConnectListener  {
 
@@ -34,7 +31,6 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
     private USBMonitor usbMonitor;
     private final AtomicBoolean isCameraRunning = new AtomicBoolean();
     private UVCCamera camera;
-//    private Surface previewSurface;
     private Thread thread;
     private Surface surface;
     private byte[] equiData = null;
@@ -117,10 +113,7 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
                     }
                 }
                this.camera.setPreviewSize(width,height,formatId);
-//                this.camera.setFrameCallback(this,UVCCamera.PIXEL_FORMAT_YUV420SP);
                 final int[] textureHandle = new int[1];
-                // note
-//                GLES20.glGenTextures(1,textureHandle,0);
                 camera.setPreviewDisplay(surface);
                 this.camera.startPreview();
                 this.frameObserver.onCapturerStarted(true);
@@ -164,20 +157,6 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
         }
 
     }
-
-    private boolean maybePostOnCameraThread(Runnable runnable) {
-        Log.d(TAG, "maybePostOnCameraThread: ");
-        return maybePostDelayedOnCameraThread(0 /* delayMs */, runnable);
-    }
-
-    private boolean maybePostDelayedOnCameraThread(int delayMs, Runnable runnable) {
-        Log.d(TAG, "maybePostDelayedOnCameraThread: ");
-        return cameraThreadHandler != null && isCameraRunning.get()
-                && cameraThreadHandler.postAtTime(
-                runnable, this /* token */, SystemClock.uptimeMillis() + delayMs);
-    }
-
-
     @Override
     public void startCapture(final int width, final int height, final int framerate) {
         Log.d(TAG, String.format("startCapture %d %d %d", width, height, framerate));
@@ -259,16 +238,4 @@ public class UVCCameraCapturer implements VideoCapturer, Runnable, USBMonitor.On
 
     }
 
-//    @Override
-    public void onFrame(ByteBuffer frame) {
-        Log.d(TAG, "onFrame: ");
-        byte data[] = new byte[frame.remaining()];
-        frame.get(data);
-
-        try {
-            if (equiData == null)
-                equiData = new byte[(1280 * 720 * 3)/2];
-        } catch (Exception e) {
-        }
-    }
 }
