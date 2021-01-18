@@ -45,7 +45,7 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
     implementation "com.twilio:audioswitch:1.1.1"
-    implementation "com.twilio:video-android:6.1.0"
+//    implementation "com.twilio:video-android:6.1.0"
     implementation 'com.twilio:voice-android:5.6.0'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation "com.twilio:video-android-ktx:6.1.0"
